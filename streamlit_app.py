@@ -1,91 +1,62 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
-import streamlit as st
-from queue import PriorityQueue
-
-"""
-# Welcome to Streamlit!
-
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
-
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+import heapq
+import sys
 
 class Graph:
-    def __init__(self, num_of_vertices):
-        self.v = num_of_vertices
-        self.edges = [[-1 for i in range(num_of_vertices)] for j in range(num_of_vertices)]
-        self.visited = []
+    
+    def __init__(self):
+        self.vertices = {}
         
-def add_edge(self, u, v, weight):
-        self.edges[u][v] = weight
-        self.edges[v][u] = weight
+    def add_vertex(self, name, edges):
+        self.vertices[name] = edges
+    
+    def shortest_path(self, start, finish):
+        distances = {} # Distance from start to node
+        previous = {}  # Previous node in optimal path from source
+        nodes = [] # Priority queue of all nodes in Graph
+
+        for vertex in self.vertices:
+            if vertex == start: # Set root node as distance of 0
+                distances[vertex] = 0
+                heapq.heappush(nodes, [0, vertex])
+            else:
+                distances[vertex] = sys.maxsize
+                heapq.heappush(nodes, [sys.maxsize, vertex])
+            previous[vertex] = None
         
-def dijkstra(graph, start_vertex):
-    D = {v:float('inf') for v in range(graph.v)}
-    D[start_vertex] = 0
+        while nodes:
+            smallest = heapq.heappop(nodes)[1] # Vertex in nodes with smallest distance in distances
+            if smallest == finish: # If the closest node is our target we're done so print the path
+                path = []
+                while previous[smallest]: # Traverse through nodes til we reach the root which is 0
+                    path.append(smallest)
+                    smallest = previous[smallest]
+                return path
+            if distances[smallest] == sys.maxsize: # All remaining vertices are inaccessible from source
+                break
+            
+            for neighbor in self.vertices[smallest]: # Look at all the nodes that this vertex is attached to
+                alt = distances[smallest] + self.vertices[smallest][neighbor] # Alternative path distance
+                if alt < distances[neighbor]: # If there is a new shortest path update our priority queue (relax)
+                    distances[neighbor] = alt
+                    previous[neighbor] = smallest
+                    for n in nodes:
+                        if n[1] == neighbor:
+                            n[0] = alt
+                            break
+                    heapq.heapify(nodes)
+        return distances
+        
+    def __str__(self):
+        return str(self.vertices)
 
-    pq = PriorityQueue()
-    pq.put((0, start_vertex))
-
-    while not pq.empty():
-        (dist, current_vertex) = pq.get()
-        graph.visited.append(current_vertex)
-
-        for neighbor in range(graph.v):
-            if graph.edges[current_vertex][neighbor] != -1:
-                distance = graph.edges[current_vertex][neighbor]
-                if neighbor not in graph.visited:
-                    old_cost = D[neighbor]
-                    new_cost = D[current_vertex] + distance
-                    if new_cost < old_cost:
-                        pq.put((new_cost, neighbor))
-                        D[neighbor] = new_cost
-    return D
-
-g = Graph(9)
-g.add_edge(0, 1, 4)
-g.add_edge(0, 6, 7)
-g.add_edge(1, 6, 11)
-g.add_edge(1, 7, 20)
-g.add_edge(1, 2, 9)
-g.add_edge(2, 3, 6)
-g.add_edge(2, 4, 2)
-g.add_edge(3, 4, 10)
-g.add_edge(3, 5, 5)
-g.add_edge(4, 5, 15)
-g.add_edge(4, 7, 1)
-g.add_edge(4, 8, 5)
-g.add_edge(5, 8, 12)
-g.add_edge(6, 7, 1)
-g.add_edge(7, 8, 3) 
-
-D = dijkstra(g, 0)
-
-print(D)
-
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
-
-    Point = namedtuple('Point', 'x y')
-    data = []
-
-    points_per_turn = total_points / num_turns
-
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+if __name__ == '__main__':
+    g = Graph()
+    g.add_vertex('A', {'B': 7, 'C': 8})
+    g.add_vertex('B', {'A': 7, 'F': 2})
+    g.add_vertex('C', {'A': 8, 'F': 6, 'G': 4})
+    g.add_vertex('D', {'F': 8})
+    g.add_vertex('E', {'H': 1})
+    g.add_vertex('F', {'B': 2, 'C': 6, 'D': 8, 'G': 9, 'H': 3})
+    g.add_vertex('G', {'C': 4, 'F': 9})
+    g.add_vertex('H', {'E': 1, 'F': 3})
+    print(g.shortest_path('A', 'H'))
