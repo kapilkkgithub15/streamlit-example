@@ -26,7 +26,7 @@ def add_edge(self, u, v, weight):
         self.edges[u][v] = weight
         self.edges[v][u] = weight
         
- def dijkstra(graph, start_vertex):
+def dijkstra(graph, start_vertex):
     D = {v:float('inf') for v in range(graph.v)}
     D[start_vertex] = 0
 
